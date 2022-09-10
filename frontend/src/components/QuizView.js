@@ -35,7 +35,7 @@ class QuizView extends Component {
   }
 
   selectCategory = ({ type, id = 0 }) => {
-    this.setState({ quizCategory: { type, id } }, this.getNextquestion);
+    this.setState({ quizCategory: { type, id } }, this.getNextQuestion);
   };
 
   handleChange = (event) => {
@@ -49,7 +49,7 @@ class QuizView extends Component {
     }
 
     $.ajax({
-      url: '/quizzes', // quiz endpoint
+      url: '/quizzes', //TODO: update request URL
       type: 'POST',
       dataType: 'json',
       contentType: 'application/json',

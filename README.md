@@ -1,7 +1,27 @@
 # API Development and Documentation Final Project
+## API Reference
+
+### Getting Started
+- Base URL: At present this app can only be run locally and is not hosted as a base URL. The backend app is hosted at the default, `http://127.0.0.1:5000/`, which is set as a proxy in the frontend configuration. 
+- Authentication: This version of the application does not require authentication or API keys. 
+
+### Error Handling
+Errors are returned as JSON objects in the following format:
+```
+{
+    "success": False, 
+    "error": 400,
+    "message": "bad request"
+}
+```
+The API will return three error types when requests fail:
+- 400: Bad Request
+- 404: Resource Not Found
+- 422: Not Processable 
+- 405: method not allowed
+- 500: Internal server error
 
 ## Trivia App
-
 Udacity is invested in creating bonding experiences for its employees and students. A bunch of team members got the idea to hold trivia on a regular basis and created a webpage to manage the trivia app and play the game, but their API experience is limited and still needs to be built out.
 
 That's where you come in! Help them finish the trivia app so they can start holding trivia and seeing who's the most knowledgeable of the bunch. The application must:
@@ -30,6 +50,11 @@ The [backend](./backend/README.md) directory contains a partially completed Flas
 2. `backend/test_flaskr.py`
 
 > View the [Backend README](./backend/README.md) for more details.
+
+
+
+
+
 
 ### Frontend
 

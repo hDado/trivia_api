@@ -8,6 +8,7 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 #hdado
+#setting pagination :
 def paginate_questions(request, q_selection):
     page = request.args.get("page", 1, type=int)
     start = (page - 1) *  QUESTIONS_PER_PAGE
@@ -39,7 +40,7 @@ def create_app(test_config=None):
         response.headers.add('Access-Control-Allow-Headers', 'GET, POST, PATCH, DELETE, OPTIONS')
         return response
     """
-    @on_going:
+    
     Create an endpoint to handle GET requests
     for all available categories.
     """
@@ -88,7 +89,7 @@ def create_app(test_config=None):
         return jsonify(
             {
                 "success" : True,
-                "questions" : current_questions,  #Reminder to test later  
+                "questions" : current_questions,  #paginated questions  
                 "total_questions" : len(q_selection) ,#num of total question
                 "categories": formatted_categories #show availlable categories
                  
@@ -120,7 +121,7 @@ def create_app(test_config=None):
                 {
                     "success" : True,
                     "deleted" : question_id,
-                    "questions" : current_questions,
+                    "questions" : current_questions, # questions are not requested to be printed 
                     "total_questions" : len(Question.query.all()),
                 }
             ) 
@@ -217,19 +218,19 @@ def create_app(test_config=None):
     category to be shown.
     """
     #get questions based on category, that mean we have category page, then we open question from it
-    @app.route('/categories/<int:category_id>/questions', methods=['GET'])
-    def questions_from_category(category_id):
+    @app.route('/categories/<int:id>/questions', methods=['GET'])
+    def questions_from_category(id):
         #let's get category from db 
-        #query_category = Category.query.filter_by(id=category_id).one_or_none() drop this query method after not getting a logic to call it in selection
+        #query_category = Category.query.filter_by(id=id).one_or_none()        
         try:
-            if category_id > len(Category.query.all()):
+            if id > len(Category.query.all()):
                 abort(404)
             else:    
             #testing order_by , didn't get correct result/ 
-                q_selection = Question.query.order_by(Question.id).filter(Question.category==category_id)  
+                q_selection = Question.query.order_by(Question.id).filter(Question.category==id)  
                 if q_selection is None:
                     abort(404) #not found
-            #adding filter  to clean the output from Questions query and leave only question category that match the input ID <category_id> 
+            #adding filter  to clean the output from Questions query and leave only question category that match the input ID <int:id> 
         #pagination :
                 current_questions = paginate_questions(request, q_selection)
 
@@ -266,37 +267,54 @@ def create_app(test_config=None):
         previousQuestion = body.get('previous_questions')
         #let's set a logic: previous question list is empty [] in the first time playing the quiz game,  
 
+        if previousQuestion is None:
+            abort(400)
+        if quizCategory is None:
+            abort(400)    
         #first let's chose a category of questions to be asked in the quiz game : 
         try:
+            
             if (quizCategory['type'] == 'click'): # when user click All / type = click or id == 0 
                 possible_questions = Question.query.all()
+                
             else: #user choose any category in the list : getting question from category with same id  
                 possible_questions = Question.query.filter_by(category=quizCategory['id']).all()
             
-            #let's use the random library to generate a random question  
-            #random.randint(start, stop) 
-            randomIndex = random.randint(0, len(possible_questions)-1)
-            quizQuestion = possible_questions[randomIndex] 
+            #print(type(possible_questions), "=====")
+            #print(type(previousQuestion), "=====")
+            
+            # for question in possible_questions:
+            #     if question['id] in previousQuestion:
+            #         possible_questions = possible_questions.remove(question)
+            #     #print(type(possible_questions))
+            # #let's use the random library to generate a random question
+            # #random.randint(start, stop) 
+            random_id = random.randint(0, len(possible_questions)-1)
+            quizQuestion = possible_questions[random_id] 
+            #print(quizQuestion ,"quiz ---")
+        
+            
 
-            asked = False 
-            if quizQuestion.id in previousQuestion:
-                asked = True
-                
-            while not asked:
-                quizQuestion = possible_questions[randomIndex] #randomIndex represent one random ID from availlable question id's 
-                return jsonify({ #data as expected in fontend-- see read me front-end
-                    'success': True,
-                    'question': {
-                        "id": quizQuestion.id,
-                        "question": quizQuestion.question,
-                        "answer": quizQuestion.answer,
-                        "difficulty" : quizQuestion.difficulty,
-                        "category": quizQuestion.category,
-                        
-                    },
-                    'previousQuestion': previousQuestion
-                })
-                
+                    
+            return jsonify({ #data as expected in fontend-- see read me front-end
+                'success': True,
+                'question': {
+                    "id": quizQuestion.id,
+                    "question": quizQuestion.question,
+                    "answer": quizQuestion.answer,
+                    "difficulty" : quizQuestion.difficulty,
+                    "category": quizQuestion.category,
+                    
+                },
+                'previousQuestion': previousQuestion
+            })
+            #condition when all questions have been asked in quiz game :
+            if (len(possibleQuestion)==len(previousQuestion)):
+                    return jsonify({
+                        'success': True,
+                        'previous_questions': previousQuestions,
+                        'trivia_question_exhausted': True,
+                    }), 200    
 
 
                 
