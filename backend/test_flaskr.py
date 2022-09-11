@@ -25,6 +25,12 @@ class TriviaTestCase(unittest.TestCase):
             'difficulty': 1,
             'category': '1' #science
         }
+        self.add_error_question = {
+            'question': 'new question test? ',
+            'answer': {},
+            'dificulty': '',
+            'categry': '888' #science
+        }
         # binds the app to the current context
         with self.app.app_context():
             self.db = SQLAlchemy()
@@ -133,15 +139,35 @@ class TriviaTestCase(unittest.TestCase):
         #print(len_query_question_bef - len_query_question_after) 
         self.assertTrue(len_query_question_after - len_query_question_bef == 1)      
 
+    def test_invalid_question_creation(self):
+        res = self.client().post("/questions", json=self.add_error_question)
+        data = json.loads(res.data)
 
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False) 
+
+
+   
+
+
+    #valid search test
     def test_question_search(self):
-        res = self.client().post("/questions", json={"searchTerm": "gogh"})
+        res = self.client().post("/questions", json={"searchTerm": "author"})
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
         self.assertTrue(len(data['questions']))
-    
+
+    #invalid search test
+    def test_no_search_term_found(self):
+        res = self.client().post('/questions/search', json={'searchTerm': 'kkdd'})
+        data = json.loads(res.data)
+        
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
     #Test questions based on category : 
     def test_405_question_based_category(self):
         
@@ -159,7 +185,6 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 422)
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'unprocessable')
-
 
 
         
@@ -200,7 +225,9 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 404)
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'resource not found')
-
+    
+    
+        
 
 # Make the tests conveniently executable
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ def paginate_questions(request, q_selection):
 
     return current_questions
 
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -142,81 +143,106 @@ def create_app(test_config=None):
     """
     #let's begin, first post endpoint, so ; main objectif to post a new question
     #proceeding just like the bookshelf excercice in our course :
+    #UPDATED : THeir is no front end for /questions/search, so i merged search with questions
     @app.route("/questions", methods=["POST"])
-    #i could have added GET and POST in the same app.route with if statment. 
-    def create_question():
+    def search__create_question():    
         body = request.get_json()
-
+        search_term = body.get('searchTerm')
         new_question = body.get('question',None) #if any of the entries is empty, set it to NONE
         new_answer = body.get('answer', None)
         new_category = body.get('category', None)
         new_difficulty = body.get('difficulty', None)
+       
 
         try:
-            question = Question(question=new_question, answer=new_answer, category=new_category, difficulty=new_difficulty)
-            question.insert() #insert to database
+            #questions from table ilike==match searchTerm from request
+            if search_term :
+                q_match = Question.question.ilike(f'%{search_term}%') 
+                print(q_match, "----------yyyyyyyyyyy")
+                #if q_match['question'] == []
+                matched_search = Question.query.filter(q_match).all() #filter questions from db only by that are like the search term
+                #flag error 404 if query result is empty:
+                if (len(matched_search) == 0):
+                    abort(404)
+                
 
-            q_selection = Question.query.order_by(Question.id).all()
-            current_questions = paginate_questions(request, q_selection)
+                #we should not forget to add pagination and view the question as it should be done, because matched selection of question could > 10
+                q_selection = matched_search #q_selection is now matched search
+                current_questions = paginate_questions(request, q_selection) #pagination
+                
+                return jsonify(
+                    {
+                        "success" : True,
+                        "questions": current_questions, 
+                        "total_questions": len(matched_search),
+                    
+                    }
+                )
+            else:
+                try:
+                    question = Question(question=new_question, answer=new_answer, category=new_category, difficulty=new_difficulty)
+                    
+                    question.insert() #insert to database
 
-            return jsonify(
-                {
-                    "success" : True,
-                    "created" : question.id,
-                    "questions" : current_questions,
-                    "total_questions": len(Question.query.all()),
-                }   
-            )
-        
+
+                    q_selection = Question.query.order_by(Question.id).all()
+                    current_questions = paginate_questions(request, q_selection)
+
+                    return jsonify(
+                        {
+                            "success" : True,
+                            "created" : question.id,
+                            "questions" : current_questions,
+                            "total_questions": len(Question.query.all()),
+                        }   
+                    )
+                except:
+                    abort(400)
         except:
-            abort(422)
+            abort(422)    
     #i have added questions succesfuly with curl -X POST -H "Content-type:application/json" -d'{}' http//:127.0.0.1:5000/questions
     # {} ----> {"question":"xxxxx", "answer": " xxxx", "category":"3".....} , i got question from trivia generator website. 
     """
-    Create a POST endpoint to get questions based on a search term.
-    It should return any questions for whom the search term
-    is a substring of the question.
+  I have merged search questions with the post questions because i have had the wrong data displayed in front end,even that the backend was working fine 
+  because their is no /question/search endpoint in frontend.
+   
+    # @app.route('/questions/search', methods=["POST"])
+    # def search_question():
+    #     #now api would get the keyword or text enter in front-end and compare it with our questions in db 
+    #     body = request.get_json()
+    #     search_term = body.get('searchTerm')
+    #     if search_term is None:
+    #         abort(400)
+        
 
-    TEST: Search by any phrase. The questions list will update to include
-    only question that include that string within their question.
-    Try using the word "title" to start.
-    """
-    @app.route('/questions/search', methods=["POST"])
-    def search_question():
-        #now api would get the keyword or text enter in front-end and compare it with our questions in db 
-        body = request.get_json()
-        search_term = body.get('searchTerm', None)
+    #     #Now we have the searchTerm from the front-end (QuestionView), let's query the db and compare the searchTerm with any string question
+    #     try:
+    #         #questions from table ilike==match searchTerm from request
+    #         q_match = Question.question.ilike(f'%{search_term}%') 
+    #         print(q_match, "----------yyyyyyyyyyy")
+    #         #if q_match['question'] == []
+    #         matched_search = Question.query.filter(q_match).all() #filter questions from db only by that are like the search term
+    #         #flag error 404 if query result is empty:
+    #         if (len(matched_search) == 0):
+    #             abort(404)
+            
 
-        #Now we have the searchTerm from the front-end (QuestionView), let's query the db and compare the searchTerm with any string question
-        try:
-            q_match = Question.question.ilike(f'%{search_term}%') #questions from table ilike==match searchTerm from request
-            matched_search = Question.query.filter(q_match).all() #filter questions from db only by that are like the search term
-            #flaf error 404 if query result is empty:
-            if matched_search is None:
-                abort(404)
-            #we should not forget to add pagination and view the question as it should be done, because matched selection of question could > 10
-            q_selection = matched_search #q_selection is now matched search
-            current_questions = paginate_questions(request, q_selection) #pagination
+    #         #we should not forget to add pagination and view the question as it should be done, because matched selection of question could > 10
+    #         s_selection = matched_search #q_selection is now matched search
+    #         current_questions = paginate_questions(request, s_selection) #pagination
             
-            
-            return jsonify(
-                {
-                    "success" : True,
-                    "questions": current_questions, 
-                    "total_questions": len(matched_search),
+    #         return jsonify(
+    #             {
+    #                 "success" : True,
+    #                 "questions": current_questions, 
+    #                 "total_questions": len(matched_search),
                 
-                }
-            )
-        except:
-            abort(422)    
+    #             }
+    #         )
+    #     except:
+    #         abort(422)    
 
-    """
-    Create a GET endpoint to get questions based on category.
-
-    TEST: In the "List" tab / main screen, clicking on one of the
-    categories in the left column will cause only questions of that
-    category to be shown.
-    """
+"""
     #get questions based on category, that mean we have category page, then we open question from it
     @app.route('/categories/<int:id>/questions', methods=['GET'])
     def questions_from_category(id):
@@ -247,16 +273,9 @@ def create_app(test_config=None):
     # testing and working with : curl  http://127.0.0.1:5000/categories/3/questions  or any other number,
     # should added error for category number that doesn't exist       
 
-    """
-    Create a POST endpoint to get questions to play the quiz.
-    This endpoint should take category and previous question parameters
-    and return a random questions within the given category,
-    if provided, and that is not one of the previous questions.
-
-    TEST: In the "Play" tab, after a user selects "All" or a category,
-    one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not.
-    """
+ 
+  
+    
     #inspecting in google chrome ; payload show that quiz_category: {type: "Science", id: "1"} / 
     # type in all :quiz_category: {type: "click", id: 0} , so let's get use of this information in our endpoint build  
     @app.route('/quizzes', methods=['POST'])
