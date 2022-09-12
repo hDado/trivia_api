@@ -2,9 +2,23 @@ import os
 from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
+#adding .env pythob-dotenv ;
+from dotenv import load_dotenv
+import os 
 
-database_name = 'trivia'
-database_path = 'postgresql://{}/{}'.format('localhost:5432', database_name)
+load_dotenv() # take environment variables from .env.
+'''
+i have added this two database connection parameter to .env file to secure my code,i didn't set a password that should be first to secure.
+Now i will change the code below :
+# database_name = 'trivia'
+# database_url = 'localhost:5432'
+to :
+os.getenv("database_name")
+'''
+database_name =os.getenv("database_name")
+database_url =os.getenv("database_url")
+#database_password =os.getenv("database_password")
+database_path = 'postgresql://{}/{}'.format(database_url, database_name)
 
 db = SQLAlchemy()
 
